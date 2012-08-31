@@ -306,19 +306,11 @@ void add_char(buffer *buf, char c) {
 }
 
 /******************************************************************************/
-/*****************************  Global Variables  *****************************/
-/******************************************************************************/
-
-vertex_array *headers, *panelists, *slots;
-vertex *nil;
-queue *q;
-
-/******************************************************************************/
 /*************************  Hopcroft-Karp Functions  **************************/
 /*****  http://en.wikipedia.org/wiki/Hopcroft-Karp_algorithm#Pseudocode  ******/
 /******************************************************************************/
 
-int hk_bfs() {
+int hk_bfs(queue *q, vertex_array *panelists, vertex *nil) {
   vertex *p, *s;
   int i;
 
@@ -346,7 +338,7 @@ int hk_bfs() {
   return nil->dist;
 }
 
-int hk_dfs(vertex *p) {
+int hk_dfs(vertex *p, vertex *nil) {
   vertex *s;
   int i;
 
@@ -356,7 +348,7 @@ int hk_dfs(vertex *p) {
   for (i = 0; i < p->num_adj; i++) {
     s = p->adj[i];
     if (s->pair->dist == (p->dist ? p->dist + 1 : 0)) {
-      if (hk_dfs(s->pair)) {
+      if (hk_dfs(s->pair, nil)) {
         s->pair = p;
         p->pair = s;
         return 1;
@@ -368,7 +360,7 @@ int hk_dfs(vertex *p) {
   return 0;
 }
 
-int hk() {
+int hk(queue *q, vertex_array *panelists, vertex_array *slots, vertex *nil) {
   vertex *p;
   int i, matches = 0;
 
@@ -377,10 +369,10 @@ int hk() {
   for (i = 0; i < slots->size; i++)
     slots->list[i]->pair = nil;
 
-  while (hk_bfs()) {
+  while (hk_bfs(q, panelists, nil)) {
     for (i = 0; i < panelists->size; i++) {
       p = panelists->list[i];
-      if (p->pair == nil && hk_dfs(p))
+      if (p->pair == nil && hk_dfs(p, nil))
         matches++;
     }
   }
@@ -393,6 +385,9 @@ int hk() {
 /******************************************************************************/
 
 int main(int argc, char **argv) {
+  vertex_array *headers, *panelists, *slots;
+  vertex *nil;
+  queue *q;
   FILE *csv;
   int i, j;
   int c;
@@ -462,7 +457,7 @@ int main(int argc, char **argv) {
   fclose(csv);
 
   /* Run Hopcroft-Karp */
-  matches = hk();
+  matches = hk(q, panelists, slots, nil);
 
   /* Re-open the file for writing */
   csv = fopen(argv[1], "wb");
