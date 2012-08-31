@@ -391,8 +391,8 @@ int main(int argc, char **argv) {
   FILE *csv;
   int i, j;
   int c;
-  int row, col;
-  int matches;
+  int row, col, last_row;
+  int available, matches;
   buffer *buf;
   vertex *v;
 
@@ -404,7 +404,7 @@ int main(int argc, char **argv) {
   /* Try to open the CSV file */
   csv = fopen(argv[1], "rb");
   if (csv == NULL) {
-    printf("Unable to open file for reading: %s\n", argv[1]);
+    fprintf(stderr, "Unable to open file for reading: %s\n", argv[1]);
     exit(1);
   }
 
@@ -421,6 +421,8 @@ int main(int argc, char **argv) {
   /* Parse the file */
   row = 0;
   col = 0;
+  last_row = -1;
+  available = 0;
   do {
     c = fgetc(csv);
     if (c == '\r') continue;
@@ -438,10 +440,15 @@ int main(int argc, char **argv) {
       else if (col == 0) {                                  /* Panelist */
         v = new_vertex(buf->list, buf->size);
         add_vertex(panelists, v);
-      } else if (buf->list[0] == 'x')                       /* Availabile */
+      } else if (buf->list[0] == 'x') {                     /* Availabile */
+        if (row != last_row) {
+          available++;
+          last_row = row;
+        }
         for (i = 0; i < MAX_PANELISTS; i++)
           add_adj(panelists->list[row - 2],
             slots->list[MAX_PANELISTS * (col - 1) + i]);
+      }
       reset_buffer(buf);
       if (c == ',')
         col++;
@@ -462,7 +469,7 @@ int main(int argc, char **argv) {
   /* Re-open the file for writing */
   csv = fopen(argv[1], "wb");
   if (csv == NULL) {
-    printf("Unable to open file for writing: %s\n", argv[1]);
+    fprintf(stderr, "Unable to open file for writing: %s\n", argv[1]);
     exit(1);
   }
 
@@ -501,5 +508,10 @@ int main(int argc, char **argv) {
   del_vertex_array(headers);
   del_queue(q);
 
+  /* Warn if not all panelists were scheduled */
+  if (available != matches) {
+    fprintf(stderr, "Unable to schedule %d panelist(s)\n", available - matches);
+    exit(2);
+  }
   return 0;
 }
