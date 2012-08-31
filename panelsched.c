@@ -392,6 +392,7 @@ int main(int argc, char **argv) {
   int i, j;
   int c;
   int row, col, last_row;
+  int quoted;
   int available, matches;
   buffer *buf;
   vertex *v;
@@ -421,12 +422,25 @@ int main(int argc, char **argv) {
   /* Parse the file */
   row = 0;
   col = 0;
+  quoted = 0;
   last_row = -1;
   available = 0;
   do {
     c = fgetc(csv);
     if (c == '\r') continue;
-    if (c == ',' || c == '\n') {
+    if (c == '"') {
+      add_char(buf, c);
+      if (quoted) {
+        c = fgetc(csv);
+        if (c != '"') {
+          quoted = 0;
+          ungetc(c, csv);
+          c = '"';
+        } else
+          add_char(buf, c);
+      } else
+        quoted = 1;
+    } else if (!quoted && (c == ',' || c == '\n')) {
       add_char(buf, '\0');
       if (row == 0 || (c == ',' && row == 1 && col == 0)) { /* Header */
         v = new_vertex(buf->list, buf->size);
