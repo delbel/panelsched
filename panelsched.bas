@@ -33,21 +33,20 @@ Sub Schedule()
             Select Case lExitCode
                 Case 1
                     Kill wbPath & ".csv"
-                    MsgBox "Unable to open CSV file for reading or writing"
+                    MsgBox "Unable to open CSV file for reading or writing", _
+                        vbCritical
                     Exit Sub
                 Case 2
-                    Kill wbPath & ".csv"
-                    MsgBox "No solution found"
-                    Exit Sub
+                    MsgBox "Unable to schedule all panelists", vbExclamation
             End Select
         Else
             Kill wbPath & ".csv"
-            MsgBox "Error running scheduler"
+            MsgBox "Error running scheduler", vbCritical
             Exit Sub
         End If
     Else
         Kill wbPath & ".csv"
-        MsgBox "Error running scheduler"
+        MsgBox "Error running scheduler", vbCritical
         Exit Sub
     End If
     CloseHandle (lPID)
